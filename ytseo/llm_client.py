@@ -42,16 +42,18 @@ class LLMClient:
             raise ValueError(f"Unknown LLM provider: {self.provider}")
     
     def _generate_ollama(self, prompt: str, system_prompt: Optional[str], max_tokens: int, temperature: float) -> str:
-        """Generate using Ollama API."""
-        url = f"{self.ollama_base_url}/api/generate"
+        """Generate using Ollama chat API for better system/user separation."""
+        url = f"{self.ollama_base_url}/api/chat"
         
-        full_prompt = prompt
+        # Build messages array for chat endpoint
+        messages = []
         if system_prompt:
-            full_prompt = f"{system_prompt}\n\n{prompt}"
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
         
         payload = {
             "model": self.model_name,
-            "prompt": full_prompt,
+            "messages": messages,
             "stream": False,
             "options": {
                 "num_predict": max_tokens,
@@ -60,10 +62,27 @@ class LLMClient:
         }
         
         try:
-            response = requests.post(url, json=payload, timeout=60)
-            response.raise_for_status()
-            result = response.json()
-            return result.get("response", "").strip()
+            # Retry logic for Ollama (GPU overload handling)
+            max_retries = 2
+            for attempt in range(max_retries + 1):
+                try:
+                    response = requests.post(url, json=payload, timeout=60)
+                    response.raise_for_status()
+                    result = response.json()
+                    
+                    # Extract response from chat format
+                    message = result.get("message", {})
+                    content = message.get("content", "").strip()
+                    
+                    # Clean common LLM artifacts
+                    content = content.strip('"').strip("'")
+                    
+                    return content
+                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                    if attempt < max_retries:
+                        print(f"Ollama retry {attempt + 1}/{max_retries} after error: {e}")
+                        continue
+                    raise
         except Exception as e:
             raise RuntimeError(f"Ollama API error: {e}")
     
