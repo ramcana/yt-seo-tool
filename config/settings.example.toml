@@ -1,0 +1,16 @@
+DB_PATH = "data/ytseo.sqlite"
+YOUTUBE_CLIENT_SECRET_PATH = "config/client_secret.json"
+AI_EWG_DB_PATH = "../ai-ewg/data/pipeline.db"
+AI_EWG_HTTP_URL = "http://localhost:8000"
+DEFAULT_CHANNEL_HANDLE = "@TheNewsForum"
+STREAMLIT_PORT = 8502
+
+# Safety Controls - CRITICAL: Keep these enabled for production
+DRY_RUN = true  # MUST be true until you're ready to apply changes
+REQUIRE_CONFIRMATION = true  # Prompts for manual "APPLY" confirmation
+MERGE_TAGS = true  # Merges new tags with existing (never deletes)
+
+# LLM Configuration - Uses AI-EWG's Ollama setup
+LLM_PROVIDER = "ollama"
+OLLAMA_BASE_URL = "http://localhost:11434"
+MODEL_NAME = "llama3.1"
