@@ -212,21 +212,32 @@ def generate_tags(context: Dict) -> List[str]:
     Merges with existing tags (never deletes).
     """
     original_tags = context.get("tags_original", [])
+    original_title = context.get("title_original", "")
+    original_desc = context.get("description_original", "")
     episode_data = _get_episode_context(context)
     
     topics = episode_data.get("topics", [])
     entities = episode_data.get("entities", [])
+    guests = episode_data.get("guest_names", [])
     show_name = episode_data.get("show_name", "")
+    
+    # Fallback to title if no topics
+    if not topics and original_title:
+        topics = [original_title]
     
     topics_str = ", ".join(topics) if topics else ""
     entities_str = ", ".join([e.get("name", "") for e in entities[:10]]) if entities else ""
+    guests_str = ", ".join(guests) if guests else ""
     
-    user_prompt = f"""Video topics: {topics_str or 'N/A'}
-People/organizations mentioned: {entities_str or 'N/A'}
-Show name (optional): {show_name or 'N/A'}
+    user_prompt = f"""Video title: {original_title}
+Video description (first 400 chars): {original_desc[:400] if original_desc else 'N/A'}
+Main topics: {topics_str or 'N/A'}
+Guests/speakers: {guests_str or 'N/A'}
+Organizations mentioned: {entities_str or 'N/A'}
+Show name: {show_name or 'N/A'}
 Existing tags: {', '.join(original_tags[:10]) if original_tags else 'None'}
 
-Generate 20-30 YouTube tags as a comma-separated list. Focus on search terms related to the specific topics. Return ONLY the comma-separated tags."""
+Generate 20-30 YouTube tags as a comma-separated list. Focus on search terms related to the specific video content, including guest names, topics discussed, and key themes. Return ONLY the comma-separated tags."""
     
     try:
         llm = get_llm_client()
@@ -280,10 +291,16 @@ def generate_hashtags(context: Dict) -> List[str]:
     """
     Generate 5-10 hashtags for social media.
     """
+    original_title = context.get("title_original", "")
     episode_data = _get_episode_context(context)
     topics = episode_data.get("topics", [])
     
-    user_prompt = f"""Main topics: {', '.join(topics) if topics else 'N/A'}
+    # Fallback to title if no topics
+    if not topics and original_title:
+        topics = [original_title]
+    
+    user_prompt = f"""Video title: {original_title}
+Main topics: {', '.join(topics) if topics else 'N/A'}
 
 Generate 5-10 relevant hashtags as a comma-separated list. Return ONLY the hashtags with # prefix."""
     
