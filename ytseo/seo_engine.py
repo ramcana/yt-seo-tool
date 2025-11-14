@@ -232,42 +232,48 @@ Generate 20-30 YouTube tags as a comma-separated list. Focus on search terms rel
         llm = get_llm_client()
         generated = llm.generate(user_prompt, TAGS_SYSTEM_PROMPT, max_tokens=300, temperature=0.6)
         
-        # Parse tags from response (handle JSON array or comma-separated)
+        # Parse tags from response
         import json
         new_tags = []
         
-        # Try to parse as JSON first
-        try:
-            parsed = json.loads(generated.strip())
-            if isinstance(parsed, list):
-                new_tags = [str(t).strip() for t in parsed if t]
-            else:
-                # Not a list, treat as comma-separated
-                new_tags = [t.strip().strip('"').strip("'") for t in str(parsed).split(",")]
-        except (json.JSONDecodeError, ValueError):
-            # Not JSON, parse as comma-separated
-            new_tags = [t.strip().strip('"').strip("'").strip("[").strip("]") for t in generated.split(",")]
+        # Clean the response first
+        generated = generated.strip()
         
-        # Filter valid tags
-        new_tags = [t for t in new_tags if t and len(t) > 2 and len(t) < 100]
+        # Try to parse as JSON array
+        if generated.startswith("[") and generated.endswith("]"):
+            try:
+                parsed = json.loads(generated)
+                if isinstance(parsed, list):
+                    new_tags = [str(t).strip() for t in parsed if t and isinstance(t, str)]
+            except json.JSONDecodeError:
+                # Fallback to comma parsing
+                pass
+        
+        # If not parsed yet, treat as comma-separated
+        if not new_tags:
+            # Split by comma and clean each tag
+            raw_tags = generated.split(",")
+            for tag in raw_tags:
+                tag = tag.strip().strip('"').strip("'").strip("[").strip("]").strip()
+                if tag and len(tag) > 2 and len(tag) < 100:
+                    new_tags.append(tag)
         
         # Merge with original (deduplicate, preserve order)
         all_tags = list(original_tags) + new_tags
         seen = set()
         unique_tags = []
         for tag in all_tags:
-            if isinstance(tag, str):
+            if isinstance(tag, str) and len(tag) > 2:
                 tag_lower = tag.lower()
-                if tag_lower not in seen and len(tag) > 2:
+                if tag_lower not in seen:
                     seen.add(tag_lower)
                     unique_tags.append(tag)
-        
         return unique_tags[:30]  # Limit to 30
     except Exception as e:
         print(f"LLM error generating tags: {e}")
         import traceback
         traceback.print_exc()
-        return list(original_tags) + ["news", "canada", "canadian news"]
+        return list(original_tags) + ["news", "politics", "analysis"]
 
 
 def generate_hashtags(context: Dict) -> List[str]:
