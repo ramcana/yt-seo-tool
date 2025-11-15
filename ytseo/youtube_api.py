@@ -68,6 +68,41 @@ def _resolve_channel_handle_to_id(youtube, handle: str) -> Optional[str]:
     return None
 
 
+def get_video_by_id(video_id: str) -> Optional[Dict]:
+    """Fetch a single video by its YouTube ID."""
+    youtube = _get_authenticated_service()
+    
+    try:
+        # Get video details
+        videos_request = youtube.videos().list(
+            part="snippet,contentDetails,statistics",
+            id=video_id
+        )
+        videos_response = videos_request.execute()
+        
+        items = videos_response.get("items", [])
+        if not items:
+            print(f"Video {video_id} not found")
+            return None
+        
+        item = items[0]
+        snippet = item["snippet"]
+        
+        return {
+            "video_id": item["id"],
+            "channel_id": snippet.get("channelId", ""),
+            "title_original": snippet.get("title", ""),
+            "description_original": snippet.get("description", ""),
+            "tags_original": snippet.get("tags", []),
+            "published_at": snippet.get("publishedAt", ""),
+            "status": "pending",
+            "episode_id": None,
+        }
+    except HttpError as e:
+        print(f"YouTube API error fetching video {video_id}: {e}")
+        return None
+
+
 def list_videos_by_channel(channel_handle: str, limit: int = 20) -> List[Dict]:
     """Fetch latest videos from a YouTube channel."""
     youtube = _get_authenticated_service()

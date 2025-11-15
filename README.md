@@ -55,6 +55,12 @@ ytseo sync --channel @YourChannel --limit 5
 ytseo sync --channel @TheNewsForum --limit 20
 ```
 
+**Fetch and process a specific video:**
+```bash
+# Fetch from YouTube and generate SEO immediately (NEW!)
+ytseo fetch --video-id 1MvFqJqq4IA
+```
+
 **Generate SEO suggestions:**
 ```bash
 # Process newest videos first (default)
@@ -63,8 +69,8 @@ ytseo generate --limit 10 --priority recent
 # Process AI-EWG linked videos (best context)
 ytseo generate --limit 10 --priority linked
 
-# Process oldest videos (backfill catalog)
-ytseo generate --limit 10 --priority oldest
+# Process a specific video from database
+ytseo generate --video-id 1MvFqJqq4IA
 ```
 
 **List videos by status:**

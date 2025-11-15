@@ -1,8 +1,44 @@
 import streamlit as st
 import sqlite3
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from ytseo import workflows
 
 st.title("📹 Video List")
+
+# Fetch Video Section
+with st.expander("🎯 Fetch Specific Video from YouTube", expanded=False):
+    st.write("Enter a YouTube video ID to fetch and process immediately.")
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        video_id_input = st.text_input(
+            "YouTube Video ID",
+            placeholder="e.g., 1MvFqJqq4IA (from youtube.com/watch?v=...)",
+            help="Get this from the YouTube URL: youtube.com/watch?v=VIDEO_ID"
+        )
+    with col2:
+        st.write("")  # Spacing
+        st.write("")  # Spacing
+        fetch_button = st.button("🚀 Fetch & Process", type="primary")
+    
+    if fetch_button:
+        if not video_id_input or len(video_id_input) < 5:
+            st.error("Please enter a valid YouTube video ID")
+        else:
+            with st.spinner(f"Fetching video {video_id_input} from YouTube..."):
+                try:
+                    result = workflows.fetch_and_process_video(video_id_input)
+                    if result:
+                        st.success(f"✅ Video fetched and processed! Check Video Detail page.")
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to fetch video. Check the video ID and try again.")
+                except Exception as e:
+                    st.error(f"Error: {str(e)}")
+
+st.divider()
 
 # Connect to database
 db_path = Path("data/ytseo.sqlite")

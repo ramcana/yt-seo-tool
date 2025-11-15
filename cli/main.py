@@ -25,6 +25,16 @@ def sync(channel: str = typer.Option(..., "--channel", help="Channel handle, e.g
 
 
 @app.command()
+def fetch(video_id: str = typer.Option(..., "--video-id", help="YouTube video ID to fetch and process")) -> None:
+    """Fetch a specific video from YouTube and generate SEO suggestions immediately."""
+    created = workflows.fetch_and_process_video(video_id)
+    if created:
+        typer.echo(f"[fetch] video_id={video_id} ✓ Fetched and processed successfully")
+    else:
+        typer.echo(f"[fetch] video_id={video_id} ✗ Failed to fetch or process")
+
+
+@app.command()
 def generate(
     limit: int = typer.Option(10, "--limit", help="Max number of pending videos to generate SEO for"),
     priority: str = typer.Option("recent", "--priority", help="Processing priority: recent|oldest|linked"),

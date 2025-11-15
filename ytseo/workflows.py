@@ -28,6 +28,42 @@ def sync_channel(channel_handle: str, limit: int = 20) -> int:
     return len(videos)
 
 
+def fetch_and_process_video(video_id: str, language_code: str = "en") -> int:
+    """
+    Fetch a specific video from YouTube and immediately generate SEO suggestions.
+    Useful for processing a single video from the channel without syncing all videos.
+    """
+    conn = dbmod.connect()
+    dbmod.apply_migrations(conn)
+    
+    # Fetch video from YouTube
+    print(f"Fetching video {video_id} from YouTube...")
+    video_data = youtube_api.get_video_by_id(video_id)
+    
+    if not video_data:
+        print(f"Failed to fetch video {video_id} from YouTube")
+        return 0
+    
+    print(f"Found: {video_data['title_original']}")
+    
+    # Upsert to database
+    models.upsert_video(
+        conn,
+        video_id=video_data["video_id"],
+        channel_id=video_data["channel_id"],
+        title_original=video_data["title_original"],
+        description_original=video_data["description_original"],
+        tags_original=video_data["tags_original"],
+        published_at=video_data["published_at"],
+        episode_id=video_data.get("episode_id"),
+        status="pending",
+    )
+    
+    # Now generate suggestions
+    print(f"Generating SEO suggestions...")
+    return generate_suggestions_for_video(video_id, language_code)
+
+
 def generate_suggestions_for_video(video_id: str, language_code: str = "en") -> int:
     """
     Generate SEO suggestions for a specific video by ID.

@@ -31,8 +31,26 @@ ytseo generate --limit 10 --priority linked
 - **linked**: Videos with `episode_id` first - prioritizes content with rich AI-EWG context
 
 ### 3. Targeted Video Processing
+
+#### A. Fetch from YouTube and Process (NEW!)
 ```bash
-# Process a specific video by ID (NEW!)
+# Fetch a specific video from YouTube and process immediately
+ytseo fetch --video-id 1MvFqJqq4IA
+
+# Video ID is from YouTube URL:
+# https://www.youtube.com/watch?v=1MvFqJqq4IA
+#                                 ^^^^^^^^^^^
+```
+
+**What happens:**
+1. Fetches video metadata from YouTube API
+2. Saves to local database
+3. Immediately generates SEO suggestions
+4. One command, complete workflow!
+
+#### B. Process from Local Database
+```bash
+# Process a video already in your database
 ytseo generate --video-id 1MvFqJqq4IA
 
 # First, find the video ID
@@ -41,8 +59,9 @@ ytseo list --status suggested --limit 20
 ```
 
 **Use Cases:**
+- Pick any video from your channel without full sync
+- Process new video immediately after upload
 - Regenerate after prompt changes
-- Process high-priority video immediately
 - Fix bad suggestions
 - Test with known content
 - Debug specific videos
