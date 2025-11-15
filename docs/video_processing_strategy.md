@@ -30,7 +30,24 @@ ytseo generate --limit 10 --priority linked
 - **oldest**: Oldest videos first - useful for backfilling entire catalog
 - **linked**: Videos with `episode_id` first - prioritizes content with rich AI-EWG context
 
-### 3. Status-Based Workflow
+### 3. Targeted Video Processing
+```bash
+# Process a specific video by ID (NEW!)
+ytseo generate --video-id 1MvFqJqq4IA
+
+# First, find the video ID
+ytseo list --status pending
+ytseo list --status suggested --limit 20
+```
+
+**Use Cases:**
+- Regenerate after prompt changes
+- Process high-priority video immediately
+- Fix bad suggestions
+- Test with known content
+- Debug specific videos
+
+### 4. Status-Based Workflow
 Videos progress through states:
 ```
 pending → suggested → approved → applied

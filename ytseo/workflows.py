@@ -28,6 +28,59 @@ def sync_channel(channel_handle: str, limit: int = 20) -> int:
     return len(videos)
 
 
+def generate_suggestions_for_video(video_id: str, language_code: str = "en") -> int:
+    """
+    Generate SEO suggestions for a specific video by ID.
+    Useful for targeted regeneration or processing a single video.
+    """
+    conn = dbmod.connect()
+    dbmod.apply_migrations(conn)
+    
+    # Fetch the specific video
+    cur = conn.execute("SELECT * FROM yt_videos WHERE video_id=?", (video_id,))
+    row = cur.fetchone()
+    
+    if not row:
+        print(f"Video {video_id} not found in database")
+        return 0
+    
+    v = dict(row)
+    
+    # Build context with video data
+    ctx = dict(v)
+    
+    # Generate all SEO fields
+    suggestion = {
+        "title": seo_engine.generate_title(ctx),
+        "description": seo_engine.generate_description(ctx),
+        "tags": seo_engine.generate_tags(ctx),
+        "hashtags": seo_engine.generate_hashtags(ctx),
+        "thumbnail_text": seo_engine.generate_thumbnail_text(ctx),
+        "pinned_comment": seo_engine.generate_pinned_comment(ctx),
+    }
+    
+    # Store suggestion
+    models.create_suggestion(
+        conn,
+        video_id=v["video_id"],
+        language_code=language_code,
+        title=suggestion["title"],
+        description=suggestion["description"],
+        tags=suggestion["tags"],
+        hashtags=suggestion["hashtags"],
+        thumbnail_text="\n".join(suggestion["thumbnail_text"]),
+        pinned_comment=suggestion["pinned_comment"],
+        playlists=[],
+    )
+    
+    # Update video status to 'suggested'
+    conn.execute("UPDATE yt_videos SET status='suggested' WHERE video_id=?", (v["video_id"],))
+    conn.commit()
+    
+    print(f"Generated suggestion for video: {v['video_id']} - {v['title_original'][:50]}...")
+    return 1
+
+
 def generate_suggestions(limit: int = 10, language_code: str = "en", priority: str = "recent") -> int:
     """
     Generate SEO suggestions for pending videos using LLM.

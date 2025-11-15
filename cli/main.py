@@ -27,11 +27,18 @@ def sync(channel: str = typer.Option(..., "--channel", help="Channel handle, e.g
 @app.command()
 def generate(
     limit: int = typer.Option(10, "--limit", help="Max number of pending videos to generate SEO for"),
-    priority: str = typer.Option("recent", "--priority", help="Processing priority: recent|oldest|linked")
+    priority: str = typer.Option("recent", "--priority", help="Processing priority: recent|oldest|linked"),
+    video_id: str = typer.Option(None, "--video-id", help="Process a specific video by ID (overrides limit/priority)")
 ) -> None:
     """Generate SEO suggestions for pending videos using LLM."""
-    created = workflows.generate_suggestions(limit=limit, priority=priority)
-    typer.echo(f"[generate] created_suggestions={created} priority={priority}")
+    if video_id:
+        # Process specific video
+        created = workflows.generate_suggestions_for_video(video_id)
+        typer.echo(f"[generate] video_id={video_id} created_suggestions={created}")
+    else:
+        # Process batch by priority
+        created = workflows.generate_suggestions(limit=limit, priority=priority)
+        typer.echo(f"[generate] created_suggestions={created} priority={priority}")
 
 
 @app.command()
@@ -55,13 +62,27 @@ def apply(limit: int = typer.Option(10, "--limit", help="Max number of approved 
 
 
 @app.command(name="list")
-def list_cmd(status: Optional[str] = typer.Option(None, "--status", help="Filter by status: pending|suggested|approved|applied")) -> None:
-    """List videos by status."""
+def list_cmd(
+    status: Optional[str] = typer.Option(None, "--status", help="Filter by status: pending|suggested|approved|applied"),
+    limit: int = typer.Option(50, "--limit", help="Max number of videos to list")
+) -> None:
+    """List videos by status with video IDs for targeted processing."""
     conn = dbmod.connect()
     dbmod.apply_migrations(conn)
-    vids = models.get_videos_by_status(conn, status=status, limit=50)
+    vids = models.get_videos_by_status(conn, status=status, limit=limit)
+    
+    typer.echo(f"\n{'Video ID':<15} {'Status':<10} {'Published':<12} Title")
+    typer.echo("-" * 100)
+    
     for v in vids:
-        typer.echo(f"{v['video_id']} | {v.get('published_at','')} | {v.get('status','')}: {v.get('title_original','')}")
+        video_id = v['video_id']
+        status_str = v.get('status', 'unknown')
+        published = v.get('published_at', '')[:10] if v.get('published_at') else 'N/A'
+        title = v.get('title_original', '')[:60]
+        typer.echo(f"{video_id:<15} {status_str:<10} {published:<12} {title}")
+    
+    typer.echo(f"\nTotal: {len(vids)} videos")
+    typer.echo(f"\nTo process a specific video: ytseo generate --video-id <VIDEO_ID>")
 
 
 @app.command()
