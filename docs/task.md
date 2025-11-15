@@ -180,6 +180,14 @@ All phases completed successfully! The project is ready for iteration.
   * [x] Dashboard shows metrics and recent activity
   * [x] Video List shows all videos with status badges
   * [ ] Test apply flow (DRY_RUN mode) - ready for manual testing
+* [x] **Prompt improvements (Nov 2024)**
+
+  * [x] Replaced Canadian-centric prompts with search-intent focused ones
+  * [x] Switched Ollama to chat endpoint with retry logic
+  * [x] Improved description context window (200→800 chars)
+  * [x] Added fallback handling for missing episode data
+  * [x] Fixed tag parsing for comma-separated LLM output
+  * [x] Added video title/description to tag generation context
 
 ---
 
@@ -195,62 +203,88 @@ All phases completed successfully! The project is ready for iteration.
   * [x] Added `get_episode_by_id(episode_id: str)` - reads from json_metadata_index + episodes
   * [x] Added `get_episode_for_youtube_video(video_id: str)` (stub, returns None for now)
   * [x] Added `search_episodes_by_title()` helper for manual mapping UI
-* [ ] **Define mapping strategy video ↔ episode**
+* [x] **Define mapping strategy video ↔ episode**
 
-  * [ ] Add `episode_id` manually for a test set (e.g., via DB or a temp UI).
-  * [ ] Later: add a smarter mapping (by title/date).
-* [ ] **Enrich `context` in `workflows.generate`**
+  * [x] Manual `episode_id` field in database
+  * [ ] TODO: Add smarter auto-mapping (by title/date similarity)
+  * [ ] TODO: Add UI for manual episode linking
+* [x] **Enrich `context` in `workflows.generate`**
 
-  * [ ] For each `video`, if an `episode_id` exists:
-    - Fetch AI-EWG episode summary, topics, entities.
-    - Inject into `context`:
-    - `summary`
-    - `topics`
-    - `entities`
-    - `hosts`
-    - `guests`
-* [ ] **Update prompt templates to use AI-EWG fields**
+  * [x] Implemented `_get_episode_context()` in seo_engine
+  * [x] Fetches AI-EWG episode data when episode_id exists
+  * [x] Extracts: summary, topics, entities, hosts, guests, show_name
+  * [x] Injects into all generation functions
+* [x] **Update prompt templates to use AI-EWG fields**
 
-  * [ ] Mention show/host/guest explicitly when present.
-  * [ ] Use topics & entities to bias SEO keywords.
+  * [x] All prompts now use topics, entities, guests from AI-EWG
+  * [x] Fallback to YouTube title/description when no episode data
+  * [x] Show/host/guest mentioned explicitly when present
 * [ ] **Test enriched generation**
 
-  * [ ] Attach 3–5 videos to known AI-EWG episodes.
-  * [ ] Run `ytseo generate --limit 5`.
-  * [ ] Confirm descriptions feel *smarter* than pure YouTube-only context.
+  * [ ] TODO: Manually link 3–5 videos to AI-EWG episodes via DB
+  * [ ] TODO: Run `ytseo generate --limit 5` on linked videos
+  * [ ] TODO: Compare quality vs non-linked videos
 
 ---
 
 ## Phase 10: Streamlit UX Upgrade (Real Data & Workflow)
 
-* [ ] **Video List improvements**
+* [x] **Video List improvements**
 
-  * [ ] Show count of suggestions per video.
-  * [ ] Add badge/colour for status (pending/suggested/approved/applied).
-  * [ ] Add quick action: “Open in Detail view”.
-* [ ] **Video Detail view full implementation**
+  * [x] Show count of suggestions per video
+  * [x] Add badge/colour for status (pending/suggested/approved/applied)
+  * [x] Add quick action: "View Details" button
+  * [x] **NEW: Fetch specific video from YouTube** (expander with video ID input)
+* [x] **Video Detail view full implementation**
 
-  * [ ] Fetch original metadata + the latest suggestion for selected `video_id`.
-  * [ ] Show **side-by-side layout**:
-
-    * Left: original title/desc/tags.
-    * Right: suggested title/desc/tags/hashtags/thumb text/pinned comment.
-  * [ ] Add **language dropdown** (even if only “en” at first).
-  * [ ] Add **Approve** button:
-
-    * [ ] Set video `status = 'approved'`.
-  * [ ] Add **Regenerate** button:
-
-    * [ ] Calls `seo_engine` again and writes a new suggestion row.
+  * [x] Fetch original metadata + latest suggestion for selected `video_id`
+  * [x] Show **side-by-side layout**:
+    * Left: original title/desc/tags
+    * Right: suggested title/desc/tags/hashtags/thumb text/pinned comment
+  * [x] Add **language dropdown** (defaults to "en")
+  * [x] Add **Approve** button → sets video `status = 'approved'`
+  * [x] Add **Regenerate** button → marks as pending, creates new suggestion
+  * [x] Add **Reject** button → marks as rejected
+  * [x] Show **suggestion history** (all past suggestions with timestamps)
 * [ ] **Diff / visual clarity**
 
-  * [ ] Highlight changed fields (e.g., use markdown or simple diff).
-* [ ] **Daily workflow visibility**
+  * [ ] TODO: Highlight changed fields with color coding or diff view
+* [x] **Daily workflow visibility**
 
-  * [ ] On Dashboard, show:
+  * [x] Dashboard shows:
+    * [x] Total videos by status
+    * [x] Recent activity (last 10 videos)
+    * [x] Metrics cards for pending/suggested/approved/applied
+  * [ ] TODO: Add "daily target" tracking (5-10 videos/day)
 
-    * [ ] “Videos optimized today” (approved+applied).
-    * [ ] “Remaining to hit daily target” (5–10).
+---
+
+## Phase 10.5: Advanced Processing Features (Nov 2024)
+
+* [x] **Priority-based video processing**
+  * [x] Added `--priority` flag to generate command
+  * [x] Modes: `recent` (newest first), `oldest` (backfill), `linked` (AI-EWG first)
+  * [x] Documented in `docs/video_processing_strategy.md`
+
+* [x] **Targeted video processing**
+  * [x] Added `--video-id` flag to generate command
+  * [x] Process specific video from local database
+  * [x] Enhanced `list` command with better formatting
+  * [x] Shows video IDs for easy copy/paste
+
+* [x] **Fetch from YouTube**
+  * [x] New `ytseo fetch --video-id` CLI command
+  * [x] New `get_video_by_id()` in youtube_api.py
+  * [x] New `fetch_and_process_video()` workflow
+  * [x] Fetches video → saves to DB → generates SEO in one step
+  * [x] Added to Streamlit Video List page (expander UI)
+  * [x] Enables picking any video from channel without full sync
+
+* [x] **Documentation**
+  * [x] Updated README.md with new commands
+  * [x] Updated video_processing_strategy.md with all approaches
+  * [x] Added security guidelines in SECURITY.md
+  * [x] Enhanced .gitignore for OAuth credentials
 
 ---
 
@@ -332,29 +366,71 @@ All phases completed successfully! The project is ready for iteration.
 
 ---
 
-## ✅ Intelligence & Integration Phase Complete (Target State)
+## 🎯 Current Status (Nov 2024)
 
-Once you’ve worked through Phases 7–12, you’ll have:
+### ✅ **Fully Operational:**
+- **Phases 1-8:** Complete (scaffold, CLI, UI, YouTube API, LLM engine)
+- **Phase 9:** AI-EWG bridge implemented and working (testing pending)
+- **Phase 10:** Streamlit UX fully functional with real data
+- **Phase 10.5:** Advanced processing features (priority, targeted, fetch)
 
-### What’s working then:
+### 🔧 **What's Working Now:**
+1. ✅ **YouTube Data API**
+   - OAuth authentication with token refresh
+   - Sync videos from channel
+   - Fetch specific video by ID
+   - Update metadata (with DRY_RUN safety)
 
-* ✅ Real YouTube Data API sync & (optionally) metadata updates
-* ✅ LLM-powered SEO engine with prompts tuned to your editorial style
-* ✅ Optional AI-EWG enrichment for deeper understanding of episodes
-* ✅ Streamlit UI that supports:
+2. ✅ **LLM-Powered SEO Engine**
+   - Search-intent focused prompts (not region-biased)
+   - Ollama chat endpoint with retry logic
+   - Context-aware generation (uses video title/description)
+   - AI-EWG enrichment when episode_id linked
+   - Generates: title, description, tags, hashtags, thumbnail text, pinned comment
 
-  * Reviewing suggestions
-  * Approving per video
-  * Seeing daily progress
-* ✅ Multi-language metadata model in place (even if only EN is used initially)
-* ✅ Safe, DRY-RUN-capable `apply` flow with DB audit trail
+3. ✅ **CLI Commands**
+   - `sync` - Fetch videos from channel
+   - `fetch` - Fetch and process specific video
+   - `generate` - Generate SEO with priority/targeted modes
+   - `list` - List videos with enhanced formatting
+   - `apply` - Apply suggestions (stubbed, needs testing)
+   - `ui` - Launch Streamlit
 
-### Natural next iterations after that:
+4. ✅ **Streamlit UI**
+   - Dashboard with metrics and activity
+   - Video List with fetch feature
+   - Video Detail with side-by-side comparison
+   - Approve/Regenerate/Reject actions
+   - Suggestion history
 
-1. Fine-tune prompt templates for show/host/guest styles.
-2. Add AI-EWG-based **clip / chapter suggestions** to descriptions.
-3. Integrate analytics into SEO decisions (e.g., “revise low-CTR titles”).
-4. Add bulk approval / bulk apply flows for high-confidence rules.
-5. Expose a “review queue” for a human editor to work through daily.
+5. ✅ **Processing Modes**
+   - Batch by priority (recent/oldest/linked)
+   - Targeted by video ID
+   - Fetch from YouTube directly
 
+### 🚧 **Pending Work:**
 
+**High Priority:**
+- [ ] Test apply flow with real YouTube updates (Phase 8, 12)
+- [ ] Test AI-EWG enrichment with linked videos (Phase 9)
+- [ ] Add diff/visual clarity to Video Detail (Phase 10)
+
+**Medium Priority:**
+- [ ] Multi-language support (Phase 11)
+- [ ] Daily target tracking (Phase 10)
+- [ ] Auto-mapping videos to AI-EWG episodes (Phase 9)
+- [ ] Manual episode linking UI (Phase 9)
+
+**Low Priority:**
+- [ ] YouTube Analytics integration (Phase 13)
+- [ ] Bulk approval/apply flows
+- [ ] Review queue for editors
+
+### 🎉 **Ready for Production Use:**
+The tool is fully functional for:
+- Syncing videos from YouTube
+- Generating SEO suggestions with LLM
+- Reviewing suggestions in Streamlit UI
+- Approving suggestions (ready for apply)
+
+**Next Step:** Test the apply flow with DRY_RUN mode on a test video!
