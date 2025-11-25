@@ -7,6 +7,7 @@
 - 🤖 **LLM-Powered SEO** - Generates optimized metadata using Ollama (llama3.1) or OpenAI
 - 🇨🇦 **Canadian News Focus** - Prompts tailored for Canadian news and politics content
 - 🎙️ **AI-EWG Integration** - Enriches context with podcast episode data (topics, guests, summaries)
+- 📺 **Multi-Channel Support** - Manage multiple YouTube channels with a single OAuth login
 - 🔒 **Multi-Layer Safety** - DRY_RUN mode, manual confirmation, tag merging (never deletes)
 - 📊 **Streamlit Dashboard** - Visual workflow for reviewing and approving suggestions
 - ⚡ **Priority Processing** - Process videos by recency, age, or AI-EWG linkage
@@ -98,17 +99,32 @@ ytseo apply --limit 5
 - Recent activity feed
 
 **Video List** - Browse and filter videos
-- Filter by status
-- View suggestion counts
-- Quick actions
+- **Sync Channel** - Fetch latest videos from YouTube
+- **Generate SEO** - Create suggestions for pending videos
+- **Apply Changes** - Apply approved suggestions to YouTube
+- **Fetch Specific Video** - Process individual videos
+- Filter by status with quick actions (View, Generate, Approve, Apply)
 
 **Video Detail** - Side-by-side comparison
 - Original vs suggested metadata
-- Approve/Regenerate/Reject actions
+- **Approve** - Mark suggestion as ready to apply
+- **Regenerate** - Create new suggestions immediately
+- **Reject** - Delete suggestion and reset to pending
+- **Apply Now** - Apply single video to YouTube
 - Language selector (multi-language ready)
 - Suggestion history
 
 **Settings** - Configuration viewer
+- Channel configuration
+- LLM settings
+- Safety controls status
+
+**Actions** - Bulk operations (NEW!)
+- **Bulk Generate** - Process multiple pending videos
+- **Bulk Approve** - Approve multiple suggestions at once
+- **Bulk Apply** - Apply multiple approved videos to YouTube
+- **Reset & Cleanup** - Reset videos or delete old suggestions
+- Workflow guide
 
 ## 📁 Project Structure
 
@@ -145,6 +161,8 @@ DB_PATH=data/ytseo.sqlite
 # YouTube OAuth
 YOUTUBE_CLIENT_SECRET_PATH=config/client_secret.json
 DEFAULT_CHANNEL_HANDLE=@TheNewsForum
+# Multiple channels (comma-separated, first is default)
+YOUTUBE_CHANNELS=@TheNewsForum,@ForumDailyNews
 
 # AI-EWG Integration
 AI_EWG_DB_PATH=../ai-ewg/data/pipeline.db
@@ -199,6 +217,7 @@ pytest -q
 
 - `docs/task.md` - Development phases and checklist
 - `docs/SECURITY.md` - Security best practices
+- `docs/multi_channel_setup.md` - Managing multiple YouTube channels
 - `docs/video_processing_strategy.md` - Handling large video libraries
 - `docs/windsurf_prompt.md` - Original project specification
 

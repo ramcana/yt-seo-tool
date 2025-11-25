@@ -44,3 +44,22 @@ def get_setting(key: str, default: Optional[Any] = None) -> Any:
         return val
     cfg = _load_toml_config()
     return cfg.get(key, default)
+
+
+def get_available_channels() -> list[str]:
+    """Get list of available YouTube channels from config."""
+    channels_str = get_setting("YOUTUBE_CHANNELS", "")
+    if not channels_str:
+        # Fallback to default channel
+        default = get_setting("DEFAULT_CHANNEL_HANDLE", "@TheNewsForum")
+        return [default] if default else []
+    
+    # Parse comma-separated list and strip whitespace
+    channels = [ch.strip() for ch in channels_str.split(",") if ch.strip()]
+    return channels if channels else ["@TheNewsForum"]
+
+
+def get_default_channel() -> str:
+    """Get the default channel (first in list or DEFAULT_CHANNEL_HANDLE)."""
+    channels = get_available_channels()
+    return channels[0] if channels else "@TheNewsForum"

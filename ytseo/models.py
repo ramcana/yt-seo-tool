@@ -23,6 +23,7 @@ def upsert_video(
     conn: sqlite3.Connection,
     video_id: str,
     channel_id: Optional[str] = None,
+    channel_handle: Optional[str] = None,
     title_original: Optional[str] = None,
     description_original: Optional[str] = None,
     tags_original: Optional[List[str]] = None,
@@ -31,21 +32,46 @@ def upsert_video(
     status: Optional[str] = None,
 ) -> None:
     tags_json = json.dumps(tags_original or [])
-    conn.execute(
-        """
-        INSERT INTO yt_videos(video_id, channel_id, title_original, description_original, tags_original, published_at, episode_id, status)
-        VALUES(?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(video_id) DO UPDATE SET
-            channel_id=excluded.channel_id,
-            title_original=excluded.title_original,
-            description_original=excluded.description_original,
-            tags_original=excluded.tags_original,
-            published_at=excluded.published_at,
-            episode_id=excluded.episode_id,
-            status=excluded.status
-        """,
-        (video_id, channel_id, title_original, description_original, tags_json, published_at, episode_id, status),
-    )
+    
+    # Check if channel_handle column exists (for backward compatibility)
+    cursor = conn.execute("PRAGMA table_info(yt_videos)")
+    columns = [row[1] for row in cursor.fetchall()]
+    has_channel_handle = "channel_handle" in columns
+    
+    if has_channel_handle:
+        conn.execute(
+            """
+            INSERT INTO yt_videos(video_id, channel_id, channel_handle, title_original, description_original, tags_original, published_at, episode_id, status)
+            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(video_id) DO UPDATE SET
+                channel_id=excluded.channel_id,
+                channel_handle=excluded.channel_handle,
+                title_original=excluded.title_original,
+                description_original=excluded.description_original,
+                tags_original=excluded.tags_original,
+                published_at=excluded.published_at,
+                episode_id=excluded.episode_id,
+                status=excluded.status
+            """,
+            (video_id, channel_id, channel_handle, title_original, description_original, tags_json, published_at, episode_id, status),
+        )
+    else:
+        # Fallback for old schema without channel_handle
+        conn.execute(
+            """
+            INSERT INTO yt_videos(video_id, channel_id, title_original, description_original, tags_original, published_at, episode_id, status)
+            VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(video_id) DO UPDATE SET
+                channel_id=excluded.channel_id,
+                title_original=excluded.title_original,
+                description_original=excluded.description_original,
+                tags_original=excluded.tags_original,
+                published_at=excluded.published_at,
+                episode_id=excluded.episode_id,
+                status=excluded.status
+            """,
+            (video_id, channel_id, title_original, description_original, tags_json, published_at, episode_id, status),
+        )
     conn.commit()
 
 

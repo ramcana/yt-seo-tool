@@ -18,6 +18,7 @@ def sync_channel(channel_handle: str, limit: int = 20) -> int:
             conn,
             video_id=v.get("video_id"),
             channel_id=v.get("channel_id"),
+            channel_handle=channel_handle,
             title_original=v.get("title_original"),
             description_original=v.get("description_original"),
             tags_original=v.get("tags_original"),
