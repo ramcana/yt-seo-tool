@@ -2,6 +2,12 @@ import streamlit as st
 import sqlite3
 import json
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from shared import render_channel_selector
+
+# Render channel selector
+selected_channel = render_channel_selector()
 
 st.title("🎬 Video Detail")
 
@@ -160,10 +166,10 @@ st.divider()
 # Actions
 st.subheader("⚡ Actions")
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    if st.button("✅ Approve", type="primary", use_container_width=True):
+    if st.button("✅ Approve", type="primary", use_container_width=True, disabled=video['status'] == 'approved'):
         conn.execute("UPDATE yt_videos SET status='approved' WHERE video_id=?", (video_id,))
         conn.commit()
         st.success("✅ Approved! Ready to apply.")
@@ -171,11 +177,21 @@ with col1:
 
 with col2:
     if st.button("🔄 Regenerate", use_container_width=True):
-        # Mark as pending to regenerate
+        # Mark as pending and regenerate immediately
         conn.execute("UPDATE yt_videos SET status='pending' WHERE video_id=?", (video_id,))
         conn.commit()
-        st.info("🔄 Marked for regeneration. Run `ytseo generate` to create new suggestions.")
-        st.rerun()
+        
+        with st.spinner("Regenerating suggestions..."):
+            try:
+                import sys
+                from pathlib import Path
+                sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+                from ytseo import workflows
+                workflows.generate_suggestions_for_video(video_id)
+                st.success("🔄 Regenerated!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
 
 with col3:
     if st.button("❌ Reject", use_container_width=True):
@@ -185,6 +201,30 @@ with col3:
         conn.commit()
         st.warning("❌ Suggestion rejected.")
         st.rerun()
+
+with col4:
+    if st.button("🚀 Apply Now", type="secondary", use_container_width=True, disabled=video['status'] != 'approved'):
+        with st.spinner("Applying to YouTube..."):
+            try:
+                import sys
+                from pathlib import Path
+                sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+                from ytseo import workflows, config
+                
+                dry_run = config.get_setting("DRY_RUN", "true").lower() in ("true", "1", "yes")
+                
+                if dry_run:
+                    st.info("🔒 DRY_RUN mode enabled")
+                
+                workflows.apply_suggestions(limit=1, dry_run=dry_run)
+                
+                if dry_run:
+                    st.success("✅ [DRY RUN] Logged changes")
+                else:
+                    st.success("✅ Applied to YouTube!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
 
 # Show suggestion history
 if len(suggestions) > 1:

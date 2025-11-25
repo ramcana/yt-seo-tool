@@ -2,8 +2,15 @@ import streamlit as st
 import sqlite3
 from pathlib import Path
 from datetime import datetime
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from shared import render_channel_selector
+
+# Render channel selector
+selected_channel = render_channel_selector()
 
 st.title("📊 Dashboard")
+st.caption(f"Viewing data for: **{selected_channel}**")
 
 # Connect to database
 db_path = Path("data/ytseo.sqlite")
@@ -13,9 +20,16 @@ if not db_path.exists():
 
 conn = sqlite3.connect(str(db_path))
 
-# Get counts by status
+# Get channel ID for filtering
+channel_id_result = conn.execute(
+    "SELECT DISTINCT channel_id FROM yt_videos WHERE channel_id IN (SELECT channel_id FROM yt_videos) LIMIT 1"
+).fetchone()
+
+# Get counts by status (optionally filtered by channel if we have channel data)
 status_counts = {}
 for status in ['pending', 'suggested', 'approved', 'applied']:
+    # For now, show all videos regardless of channel
+    # TODO: Add channel_handle column to yt_videos table for proper filtering
     count = conn.execute("SELECT COUNT(*) FROM yt_videos WHERE status=?", (status,)).fetchone()[0]
     status_counts[status] = count
 
